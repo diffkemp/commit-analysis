@@ -140,6 +140,20 @@ def analyze_commit(args, commit):
 
     verdict = "equal" if neq + err == 0 else "not equal"
 
+    function_results = {}
+    result_files = os.listdir(result_path)
+    for function in functions:
+        if f"{function}: unknown" in output:
+            diff_type = "unk"
+        elif f"{function}: error" in output:
+            diff_type = "err"
+        elif (os.path.exists(result_path) and
+              f"{function}.diff" in result_files):
+            diff_type = "neq"
+        else:
+            diff_type = "eq"
+        function_results[function] = diff_type
+
     return {
         "no_functions": len(functions),
         "eq": eq,
@@ -149,6 +163,7 @@ def analyze_commit(args, commit):
         "err": err,
         "verdict": verdict,
         "confident": all_matched,
+        "functions": function_results
     }
 
 
