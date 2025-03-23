@@ -48,6 +48,10 @@ The tool reports about the analysis to stdout, the report is in YAML format:
   # Number of functions which was DiffKemp not able to analyse because error
   # occurred during analysis.
   err: ...
+  # Results for individual compared functions
+  functions:
+    # Result for given function (one of `unk`, `neq`, `err`, `eq`)
+    <function-name>: ...
 ```
 
 The result for commit can sometime contain only the `verdict` field, this
@@ -64,6 +68,12 @@ e17d62fedd10ae56e2426858bd0757da544dbc73:
   empty: 1
   eq: 2
   err: 0
+  functions:
+    __bpf_get_stack: neq
+    __bpf_get_stackid: neq
+    prealloc_elems_and_freelist: eq
+    stack_map_calculate_max_depth: unk
+    stack_map_data_size: eq
   neq: 2
   no_functions: 5
   unk: 1
