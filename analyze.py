@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 
-import csv
 import argparse
 import contextlib
 import os
@@ -11,6 +10,7 @@ import subprocess
 import tempfile
 
 import git
+import yaml
 
 
 def parse_args():
@@ -88,7 +88,7 @@ def create_snapshot(repo, commit, diffkemp, functions, output_dir):
         )
 
 
-def analyze_commit(args, writer, commit):
+def analyze_commit(args, commit):
     repo = git.Repo(args.repo)
     new_commit = repo.commit(commit)
     old_commit = repo.commit(f"{commit}^")
@@ -107,8 +107,7 @@ def analyze_commit(args, writer, commit):
 
     all_matched, functions = locate_functions(old_commit, new_commit)
     if not functions:
-        writer.writerow([commit, "-", "-", "-", "-", "-", "-", "-", "NO-FUNCTIONS", "-"])
-        return
+        return {"verdict": "NO-FUNCTIONS"}
 
     with contextlib.chdir(args.repo):
         create_snapshot(repo, old_commit, args.diffkemp, functions, old_snapshot)
@@ -130,40 +129,38 @@ def analyze_commit(args, writer, commit):
                                  \(empty\s+diff\):\s*(?P<empty>\d+)\s+\(\d+%\)\s*
                                  Unknown:\s*(?P<unk>\d+)\s+\(\d+%\)\s*
                                  Errors:\s*(?P<err>\d+)\s+\(\d+%\)""", output, re.VERBOSE)
-    if match:
-        eq = int(match.group("eq"))
-        neq = int(match.group("neq"))
-        empty = int(match.group("empty"))
-        unk = int(match.group("unk"))
-        err = int(match.group("err"))
-
-        verdict = "equal" if neq + err == 0 else "not equal"
-        writer.writerow([
-            commit,
-            ", ".join(functions),
-            len(functions),
-            eq,
-            neq,
-            empty,
-            unk,
-            err,
-            verdict,
-            all_matched
-        ])
-    else:
+    if not match:
         raise RuntimeError("Unable to detect the number of equal functions")
+
+    eq = int(match.group("eq"))
+    neq = int(match.group("neq"))
+    empty = int(match.group("empty"))
+    unk = int(match.group("unk"))
+    err = int(match.group("err"))
+
+    verdict = "equal" if neq + err == 0 else "not equal"
+
+    return {
+        "no_functions": len(functions),
+        "eq": eq,
+        "neq": neq,
+        "empty": empty,
+        "unk": unk,
+        "err": err,
+        "verdict": verdict,
+        "confident": all_matched,
+    }
 
 
 def run_analysis(args):
-    writer = csv.writer(sys.stdout, dialect="unix")
-    writer.writerow(["commit", "functions", "no_functions", "eq", "neq",
-                     "empty", "unk", "err", "verdict", "confident"])
+    results = {}
     for commit in sys.stdin:
         commit = commit.strip()
         try:
-            analyze_commit(args, writer, commit)
+            results[commit] = analyze_commit(args, commit)
         except subprocess.CalledProcessError:
-            writer.writerow([commit, "-", "-", "-", "-", "-", "-", "-" "FAIL", "-"])
+            results[commit] = {"verdict": "FAIL"}
+    yaml.safe_dump(results, sys.stdout)
 
 
 def main():
