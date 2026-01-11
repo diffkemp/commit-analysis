@@ -71,11 +71,11 @@ def create_snapshot(repo, commit, diffkemp, functions, output_dir):
     subprocess.check_call(["make", "allmodconfig"], **kargs)
     subprocess.check_call(["scripts/config", "--disable", "CONFIG_RETPOLINE"], **kargs)
     subprocess.check_call(
-        ["make", "prepare", "EXTRA_CFLAGS=-w -fno-pie -no-pie", "CFLAGS=-w", "HOSTLDFLAGS=-no-pie"],
+        ["make", "prepare", "EXTRA_CFLAGS=-w -fno-pie -no-pie", "KCFLAGS=-w", "HOSTLDFLAGS=-no-pie"],
         **kargs
     )
     subprocess.check_call(
-        ["make", "modules_prepare", "EXTRA_CFLAGS=-w -fno-pie -no-pie", "CFLAGS=-w", "HOSTLDFLAGS=-no-pie"],
+        ["make", "modules_prepare", "EXTRA_CFLAGS=-w -fno-pie -no-pie", "KCFLAGS=-w", "HOSTLDFLAGS=-no-pie"],
         **kargs
     )
 
