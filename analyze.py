@@ -70,6 +70,7 @@ def create_snapshot(repo, commit, diffkemp, functions, output_dir):
 
     subprocess.check_call(["make", "allmodconfig"], **kargs)
     subprocess.check_call(["scripts/config", "--disable", "CONFIG_RETPOLINE"], **kargs)
+    subprocess.check_call(["scripts/config", "--disable", "CONFIG_GCC_PLUGIN_LATENT_ENTROPY"], **kargs)
     subprocess.check_call(
         ["make", "prepare", "EXTRA_CFLAGS=-w -fno-pie -no-pie", "KCFLAGS=-w", "HOSTLDFLAGS=-no-pie"],
         **kargs
